@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>JSON File Formatter</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        #fileInput, #formattedOutput {
+            width: 100%;
+            margin: 10px 0;
+            padding: 10px;
+        }
+        #formattedOutput {
+            height: 300px;
+            overflow-y: scroll;
+            white-space: pre-wrap;
+            background-color: #f4f4f4;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>JSON File Formatter</h1>
+    
+    <div>
+        <input type="file" id="fileInput" accept=".json">
+        <button onclick="formatJSON()">Format JSON</button>
+    </div>
+
+    <h2>Formatted Output:</h2>
+    <pre id="formattedOutput"></pre>
+
+    <script>
+        function formatJSON() {
+            const fileInput = document.getElementById('fileInput');
+            const formattedOutput = document.getElementById('formattedOutput');
+            
+            if (!fileInput.files.length) {
+                alert('Please select a JSON file');
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                try {
+                    const jsonData = JSON.parse(e.target.result);
+                    const formattedData = formatData(jsonData);
+                    formattedOutput.textContent = JSON.stringify(formattedData, null, 2);
+                } catch (error) {
+                    formattedOutput.textContent = `Error parsing JSON: ${error.message}`;
+                }
+            };
+
+            reader.readAsText(file);
+        }
+
+        function formatData(originalData) {
+            const formattedData = {};
+
+            // Iterate through each title in the original data
+            for (const [title, translations] of Object.entries(originalData)) {
+                if (!Array.isArray(translations)) continue;
+
+                // Create an array to store unique translations
+                const uniqueTranslations = [];
+                const seenTranslations = new Set();
+
+                translations.forEach(translation => {
+                    // Convert to string to compare complex objects
+                    const translationKey = JSON.stringify(translation);
+                    
+                    // Add only if not already seen
+                    if (!seenTranslations.has(translationKey)) {
+                        seenTranslations.add(translationKey);
+                        uniqueTranslations.push(translation);
+                    }
+                });
+
+                // Sort translations if they have a specific key like 'korean' or 'sinhalese'
+                if (uniqueTranslations.length > 0) {
+                    const sortKey = Object.keys(uniqueTranslations[0])[0];
+                    uniqueTranslations.sort((a, b) => 
+                        a[sortKey].localeCompare(b[sortKey])
+                    );
+                }
+
+                formattedData[title] = uniqueTranslations;
+            }
+
+            return formattedData;
+        }
+    </script>
+</body>
+</html>
